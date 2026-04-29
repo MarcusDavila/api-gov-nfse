@@ -160,27 +160,27 @@ if __name__ == "__main__":
         print(f"\n{'='*60}")
         print(f"VERIFICANDO CANCELAMENTOS: {config['nome']}")
         print(f"{'='*60}")
-        
+
         verificador = VerificadorCancelamentos(config)
-        
+
         try:
             # 1. Tenta carregar de onde parou no arquivo específico da filial
             nsu_atual = verificador.carregar_progresso()
-            
+
             if nsu_atual is None:
                 # Se não tem log, pega o último do banco e retrocede 5000 para segurança
                 ultimo_banco = verificador.obter_ultimo_nsu_banco()
                 retroceder_nsu = 5000 
                 nsu_atual = max(1, ultimo_banco - retroceder_nsu)
-            
+
             print(f"Ponto de partida para {config['nome']}: NSU {nsu_atual}")
 
             while True:
                 sys.stdout.write(f"\r[{config['nome']}] Processando NSU: {nsu_atual}...")
                 sys.stdout.flush()
-                
+
                 res = verificador.consultar_e_verificar(nsu_atual)
-                
+
                 if res == "FIM":
                     print(f"\n[FIM] Eventos de {config['nome']} conferidos até o final.")
                     break
@@ -193,7 +193,7 @@ if __name__ == "__main__":
                     verificador.salvar_progresso(nsu_atual)
                 else:
                     nsu_atual += 1
-                
+
                 time.sleep(0.8) # Delay para evitar erro 429
         finally:
             verificador.fechar()
