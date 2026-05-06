@@ -94,7 +94,6 @@ class GovNFSeAPI:
     def salvar_nota(self, nsu, dados):
         if not dados: return
 
-        if not dados: return
 
         # --- GARANTIR QUE A TABELA EXISTE ---
         create_table_sql = """
