@@ -94,6 +94,32 @@ class GovNFSeAPI:
     def salvar_nota(self, nsu, dados):
         if not dados: return
 
+        if not dados: return
+
+        # --- GARANTIR QUE A TABELA EXISTE ---
+        create_table_sql = """
+            CREATE TABLE IF NOT EXISTS public.pub_nfse_notas_api (
+            nsu integer NOT NULL,
+            numero_nota character varying(50),
+            data_emissao timestamp without time zone,
+            emitente_cnpj character varying(20),
+            emitente_nome character varying(255),
+            tomador_cnpj character varying(20),
+            tomador_nome character varying(255),
+            servico_descricao text,
+            valor_servico numeric(15,2),
+            valor_bc numeric(15,2),
+            iss_retido character varying(10),
+            valor_iss numeric(15,2),
+            valor_liquido numeric(15,2),
+            chave_acesso character varying(100),
+            dtinc timestamp without time zone DEFAULT now(),
+            situacao character varying(20) DEFAULT 'AUTORIZADA'::character varying,
+            data_cancelamento timestamp without time zone,
+            filial integer NOT NULL,
+            CONSTRAINT pub_nfse_notas_api_pkey PRIMARY KEY (nsu, filial)
+            );
+        """
         # --- CANCELAMENTO ---
         if dados.get("tipo") == "CANCELAMENTO":
             chave = self.limpar_chave(dados.get("Chave_Acesso"))
