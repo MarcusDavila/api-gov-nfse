@@ -1,0 +1,15 @@
+DB_DATABASE=nome do banco de dados
+DB_USER=nome do usuario
+DB_PASSWORD=senha do usuario
+DB_HOST=ip do banco de dados
+DB_PORT=porta do banco de dados
+
+
+CERT_PATH_pem_INTERLINK= caminho do arquivo .pem
+CERT_PATH_key_INTERLINK= caminho do arquivo .key
+CERT_PASSWORD_INTERLINK= senha do certificado
+
+
+CERT_PATH_pem_ECARGO= caminho do arquivo .pem
+CERT_PATH_key_ECARGO= caminho do arquivo .key
+CERT_PASSWORD_ECARGO= senha do certificado
