@@ -204,25 +204,52 @@ class GovNFSeAPI:
             root = it.root
 
             def get_t(node, tag):
+                if node is None: return ""
                 found = node.find(f".//{tag}")
                 return found.text.replace('’', "'").strip() if found is not None and found.text else ""
 
-            if root.find(".//e101101") is not None or (root.find(".//tpEvento") is not None and root.find(".//tpEvento").text in ["110111", "101101"]):
-                ch = get_t(root, "chNFSe") or get_t(root, "chDFSe")
+            tp_evento = get_t(root, "tpEvento")
+            dh_evento = get_t(root, "dhEvento") or get_t(root, "dhProc")
+
+            # --- 1. DETECÇÃO DE SUBSTITUIÇÃO (Evento e105102 - Debug NSU 3707) ---
+            if root.find(".//e105102") is not None:
                 return {
-                    "tipo": "CANCELAMENTO",
-                    "Chave_Acesso": self.limpar_chave(ch),
-                    "Data_Cancelamento": self._parse_data(get_t(root, "dhEvento") or get_t(root, "dhProc"))
+                    "tipo": "SUBSTITUICAO",
+                    "Chave_Acesso": self.limpar_chave(get_t(root, "chNFSe")),
+                    "Chave_Nova": self.limpar_chave(get_t(root, "chSubstituta")),
+                    "Data_Cancelamento": self._parse_data(dh_evento)
                 }
 
+            # --- 2. DETECÇÃO DE SUBSTITUIÇÃO (Evento padrão 101103) ---
+            if tp_evento == "101103":
+                return {
+                    "tipo": "SUBSTITUICAO",
+                    "Chave_Acesso": self.limpar_chave(get_t(root, "chNFSeSubst") or get_t(root, "chNFSe")),
+                    "Data_Cancelamento": self._parse_data(dh_evento)
+                }
+
+            # --- 3. DETECÇÃO DE CANCELAMENTO PADRÃO ---
+            if root.find(".//e101101") is not None or tp_evento in ["110111", "101101"]:
+                ch = get_t(root, "chNFSe") or get_t(root, "chDFSe")
+                return {
+                "tipo": "CANCELAMENTO",
+                    "Chave_Acesso": self.limpar_chave(ch),
+                    "Data_Cancelamento": self._parse_data(dh_evento)
+                }
+
+            # --- 4. DETECÇÃO DE EMISSÃO ---
             if root.find(".//nNFSe") is not None or root.find(".//infNFSe") is not None:
                 infNFSe = root.find(".//infNFSe")
                 chave = infNFSe.attrib.get('Id', '') if infNFSe is not None else get_t(root, "chNFSe")
                 emit, toma = root.find(".//emit"), root.find(".//toma")
+                
+                # Verifica se esta nota nova está substituindo uma antiga
+                chave_substituida = get_t(root, "chNFSeSubst")
 
                 return {
                     "tipo": "EMISSAO",
                     "Chave_Acesso": self.limpar_chave(chave),
+                    "Chave_Substituida": self.limpar_chave(chave_substituida), # Opcional: para log
                     "Numero_Nota": self.limpar_numero_nota(get_t(root, "nNFSe")),
                     "Data_Emissao": self._parse_data(get_t(root, "dhEmi")),
                     "Emitente_CNPJ": get_t(emit, "CNPJ") if emit is not None else "",
@@ -236,8 +263,10 @@ class GovNFSeAPI:
                     "Valor_ISS": float(get_t(root, "vISSQN") or 0),
                     "Valor_Liquido": float(get_t(root, "vLiq") or 0)
                 }
+            
             return None
-        except: return None
+        except Exception as e: 
+            return None
 
     def fechar(self):
         if self.conn: self.conn.close()
@@ -265,6 +294,6 @@ if __name__ == "__main__":
                 else: 
                     nsu_atual += 1
 
-                time.sleep(0.3)
+                time.sleep(2)
         finally:
             api.fechar()
